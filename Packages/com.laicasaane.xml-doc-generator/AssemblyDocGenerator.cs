@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using UnityEditor;
 using UnityEditor.PackageManager;
@@ -11,12 +12,12 @@ namespace XmlDocGenerator
 {
     internal static class AssemblyDocGenerator
     {
-        private readonly struct AsmdefData
+        private readonly struct AsmdefXmlDoc
         {
             public readonly string Name;
             public readonly RootPath Root;
 
-            public AsmdefData(string name, RootPath root)
+            public AsmdefXmlDoc(string name, RootPath root)
             {
                 Name = name;
                 Root = root;
@@ -26,7 +27,7 @@ namespace XmlDocGenerator
         private class PackageDef
         {
             public readonly RootPath Root;
-            public readonly List<AsmdefData> Asmdefs = new();
+            public readonly List<AsmdefXmlDoc> Asmdefs = new();
 
             public PackageDef(RootPath root)
             {
@@ -35,8 +36,10 @@ namespace XmlDocGenerator
         }
 
         private const string GENERATED_FILE = ".XMLDOC_CSC_RSP_GENERATED";
+        private const string XML_DOCUMENTATION_FOLDER = "Library/XmlDocumentationGenerated";
+        private const string SCRIPT_ASSEMBLIES_FOLDER = "Library/ScriptAssemblies";
 
-        [MenuItem("Tools/Generate XML Documentation")]
+        [MenuItem("Tools/XML Documentation/Generate", priority = 0)]
         private static void GenerateXmlDocumentation()
         {
             const string TITLE = "Generate XML Documentation";
@@ -44,6 +47,129 @@ namespace XmlDocGenerator
 
             EditorUtility.DisplayProgressBar(TITLE, INFO, 0f);
 
+            var packages = GetPackageDefs(false);
+
+            if (packages.Length < 1)
+            {
+                EditorUtility.ClearProgressBar();
+                return;
+            }
+
+            EditorUtility.DisplayProgressBar(TITLE, INFO, 20f);
+
+            var projectRoot = GetProjectRootPath();
+            var xmlDocumentationFolderPath = projectRoot.GetFolderAbsolutePath(XML_DOCUMENTATION_FOLDER);
+
+            if (Directory.Exists(xmlDocumentationFolderPath) == false)
+            {
+                Directory.CreateDirectory(xmlDocumentationFolderPath);
+            }
+
+            var printer = new Printer(1024);
+
+            foreach (var package in packages)
+            {
+                foreach (var asmdef in package.Asmdefs)
+                {
+                    var cscFilePath = asmdef.Root.GetFileAbsolutePath("csc.rsp");
+                    var cscBackupFilePath = asmdef.Root.GetFileAbsolutePath(".csc-rsp-backup");
+                    var generatedFilePath = asmdef.Root.GetFileAbsolutePath(GENERATED_FILE);
+                    var xmlFilePath = $"{XML_DOCUMENTATION_FOLDER}/{asmdef.Name}.xml";
+
+                    printer.Clear();
+
+                    var cscFileExists = false;
+
+                    if (File.Exists(cscFilePath))
+                    {
+                        cscFileExists = true;
+                        printer.PrintLine(File.ReadAllText(cscFilePath));
+                        File.Copy(cscFilePath, cscBackupFilePath);
+                        File.Delete(cscFilePath);
+                    }
+
+                    File.WriteAllText(cscFilePath, GetCscRspContent(ref printer, xmlFilePath), Encoding.UTF8);
+
+                    if (cscFileExists == false)
+                    {
+                        printer.Clear();
+
+                        File.WriteAllText(
+                              asmdef.Root.GetFileAbsolutePath("csc.rsp.meta")
+                            , GetCscRspMetaContent(ref printer)
+                            , Encoding.UTF8
+                        );
+                    }
+
+                    File.WriteAllText(generatedFilePath, "");
+                }
+            }
+
+            EditorUtility.DisplayProgressBar(TITLE, INFO, 100f);
+            EditorUtility.ClearProgressBar();
+
+            AssetDatabase.Refresh();
+        }
+
+        [MenuItem("Tools/XML Documentation/Delete", priority = 1)]
+        private static void DeleteXmlDocumentation()
+        {
+            const string TITLE = "Delete XML Documentation";
+            const string INFO = "Deleting...";
+
+            EditorUtility.DisplayProgressBar(TITLE, INFO, 0f);
+
+            var packages = GetPackageDefs(true);
+
+            if (packages.Length < 1)
+            {
+                EditorUtility.ClearProgressBar();
+                return;
+            }
+
+            foreach (var package in packages)
+            {
+                foreach (var asmdef in package.Asmdefs)
+                {
+                    var cscFilePath = asmdef.Root.GetFileAbsolutePath("csc.rsp");
+                    var cscBackupFilePath = asmdef.Root.GetFileAbsolutePath(".csc-rsp-backup");
+                    var cscMetaFilePath = asmdef.Root.GetFileAbsolutePath("csc.rsp.meta");
+                    var generatedFilePath = asmdef.Root.GetFileAbsolutePath(GENERATED_FILE);
+
+                    if (File.Exists(cscBackupFilePath))
+                    {
+                        File.Copy(cscBackupFilePath, cscFilePath, true);
+                        File.Delete(cscBackupFilePath);
+                    }
+                    else if (File.Exists(cscFilePath))
+                    {
+                        File.Delete(cscFilePath);
+                        File.Delete(cscMetaFilePath);
+                    }
+
+                    if (File.Exists(generatedFilePath))
+                    {
+                        File.Delete(generatedFilePath);
+                    }
+                }
+            }
+
+            var projectRoot = GetProjectRootPath();
+            var xmlDocumentationFolderPath = projectRoot.GetFolderAbsolutePath(XML_DOCUMENTATION_FOLDER);
+
+            if (Directory.Exists(xmlDocumentationFolderPath))
+            {
+                Directory.Delete(xmlDocumentationFolderPath, true);
+            }
+
+            EditorUtility.DisplayProgressBar(TITLE, INFO, 100f);
+            EditorUtility.ClearProgressBar();
+
+            AssetDatabase.Refresh();
+        }
+
+        private static PackageDef[] GetPackageDefs(bool onlyGenerated)
+        {
             var guidStrings = AssetDatabase
                 .FindAssets($"t:{nameof(AssemblyDefinitionAsset)}")
                 .AsSpan();
@@ -53,12 +179,10 @@ namespace XmlDocGenerator
             if (guidStringsLength < 1)
             {
                 EditorUtility.ClearProgressBar();
-                return;
+                return Array.Empty<PackageDef>();
             }
 
-            EditorUtility.DisplayProgressBar(TITLE, INFO, 10f);
-
-            RootPath projectRoot = Application.dataPath.Replace("/Assets", string.Empty);
+            var projectRoot = GetProjectRootPath();
 
             var packageMap = new Dictionary<string, PackageDef>();
 
@@ -89,12 +213,15 @@ namespace XmlDocGenerator
                         asmdefFolderPath = asmdefFolderPath[..^1];
                     }
 
-                    RootPath asmdefRoot = packageDef.Root.GetFolderAbsolutePath(asmdefFolderPath);
+                    var asmdefRoot = packageDef.Root.GetFolderRoot(asmdefFolderPath);
                     var genenratedFilePath = asmdefRoot.GetFileAbsolutePath(GENERATED_FILE);
+                    var generatedFileExists = File.Exists(genenratedFilePath);
 
-                    if (File.Exists(genenratedFilePath) == false)
+                    if ((onlyGenerated && generatedFileExists)
+                        || (onlyGenerated == false && generatedFileExists == false)
+                    )
                     {
-                        packageDef.Asmdefs.Add(new AsmdefData(asmdefAsset.name, asmdefRoot));
+                        packageDef.Asmdefs.Add(new AsmdefXmlDoc(asmdefAsset.name, asmdefRoot));
                     }
                 }
                 catch (Exception ex)
@@ -103,62 +230,62 @@ namespace XmlDocGenerator
                 }
             }
 
-            if (packageMap.Count < 1)
+            return packageMap.Values.ToArray();
+        }
+
+        [InitializeOnLoadMethod]
+        private static void CopyXmlDocToScriptAssembliesFolder()
+        {
+            var projectRoot = GetProjectRootPath();
+            var xmlDocumentationFolderPath = projectRoot.GetFolderAbsolutePath(XML_DOCUMENTATION_FOLDER);
+
+            if (Directory.Exists(xmlDocumentationFolderPath) == false)
             {
-                EditorUtility.ClearProgressBar();
                 return;
             }
 
-            EditorUtility.DisplayProgressBar(TITLE, INFO, 20f);
+            var xmlFiles = Directory.GetFiles(xmlDocumentationFolderPath, "*.xml", SearchOption.TopDirectoryOnly);
 
-            var printer = new Printer(1024);
-
-            foreach (var package in packageMap.Values)
+            if (xmlFiles.Length < 1)
             {
-                foreach (var asmdef in package.Asmdefs)
-                {
-                    var cscFilePath = asmdef.Root.GetFileAbsolutePath("csc.rsp");
-                    var genenratedFilePath = asmdef.Root.GetFileAbsolutePath(GENERATED_FILE);
-
-                    printer.Clear();
-
-                    var cscFileExists = false;
-
-                    if (File.Exists(cscFilePath))
-                    {
-                        cscFileExists = true;
-                        printer.PrintLine(File.ReadAllText(cscFilePath));
-                        File.Delete(cscFilePath);
-                    }
-
-                    File.WriteAllText(cscFilePath, GetCscRspContent(ref printer, asmdef.Name), Encoding.UTF8);
-
-                    if (cscFileExists == false)
-                    {
-                        printer.Clear();
-
-                        File.WriteAllText(
-                              asmdef.Root.GetFileAbsolutePath("csc.rsp.meta")
-                            , GetCscRspMetaContent(ref printer)
-                            , Encoding.UTF8
-                        );
-                    }
-
-                    File.WriteAllText(genenratedFilePath, "");
-                }
+                return;
             }
 
-            EditorUtility.DisplayProgressBar(TITLE, INFO, 100f);
-            EditorUtility.ClearProgressBar();
+            var scriptAssembliesFolderPath = projectRoot.GetFolderAbsolutePath(SCRIPT_ASSEMBLIES_FOLDER);
+
+            foreach (var xmlFile in xmlFiles)
+            {
+                var fileName = Path.GetFileName(xmlFile);
+                var destFilePath = Path.Combine(scriptAssembliesFolderPath, fileName);
+
+                try
+                {
+                    File.Copy(xmlFile, destFilePath, true);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Failed to copy '{xmlFile}' to '{destFilePath}': {ex.Message}");
+                }
+            }
         }
 
-        private static string GetCscRspContent(ref Printer p, string asmdefName)
+        private static RootPath GetProjectRootPath()
+            => Application.dataPath.Replace("/Assets", string.Empty);
+
+        private static string GetCscRspContent(ref Printer p, string xmlFilePath)
         {
             // https://gamedev.stackexchange.com/a/173674
-            p.PrintBeginLine($"-doc:Library/ScriptAssemblies/{asmdefName}.xml ")
-                .Print("-nowarn:1570 -nowarn:1591 -nowarn:1584 -nowarn:1658 -nowarn:419 ")
-                .PrintEndLine("-nowarn:1574 -nowarn:1572 -nowarn:1573 -nowarn:1587");
-            p.PrintEndLine();
+            p.PrintLine($"-doc:./{xmlFilePath} ")
+             .PrintLine("-nowarn:419")
+             .PrintLine("-nowarn:1570")
+             .PrintLine("-nowarn:1572")
+             .PrintLine("-nowarn:1573")
+             .PrintLine("-nowarn:1574")
+             .PrintLine("-nowarn:1584")
+             .PrintLine("-nowarn:1587")
+             .PrintLine("-nowarn:1591")
+             .PrintLine("-nowarn:1658")
+             .PrintEndLine();
 
             return p.Result;
         }
