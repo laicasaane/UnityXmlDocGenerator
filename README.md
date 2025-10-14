@@ -1,8 +1,10 @@
 # Unity XML Documentation Generator
 
-Both Unity and VSTU have yet supported XML Documentation for UPM packages[^1] thus there was no API documentation to display in quick info popup within IDEs (Visual Studio, VSCode, etc).
+Both Unity and VSTU have yet supported XML Documentation for UPM packages[^1]
+thus there was no API documentation to display in quick info popup within IDEs (Visual Studio, VSCode, etc).
 
-This tool was created to offer a simple workaround for the time being, until the 1st party officially rectifies this situation.
+This tool was created to offer a simple workaround for the time being,
+until the 1st party officially rectifies this situation.
 
 ## Installation
 
@@ -19,7 +21,7 @@ This tool was created to offer a simple workaround for the time being, until the
 
 3. Enter the package URL
     ```
-    https://github.com/laicasaane/UnityXmlDocGenerator.git?path=/Packages/com.laicasaane.xml-doc-generator#1.0.1
+    https://github.com/laicasaane/UnityXmlDocGenerator.git?path=/Packages/com.laicasaane.xml-doc-generator#1.0.2
     ```
 
     ![enter git url then press add button](imgs/add-package-by-git-url-2.png)
@@ -35,29 +37,67 @@ openupm add com.laicasaane.xml-doc-generator
 
 ## Usage
 
-Use the menu `Tools > Generate XML Documentation`.
+### Generate XML Documentation
+
+Use the menu `Tools > XML Documentation > Generate`.
 
 ![generate xml documentation menu](imgs/tools-generate.png)
 
-This will generate a `csc.rsp` file into each the folder containing an `asmdef` file, within the `Library/PackageCache` directory.
+This will generate a `csc.rsp` file into each the folder containing an `asmdef` file,
+within the `Library/PackageCache` directory.
 
 The contents of this file should look like this:
 
 ```bash
--doc:Library/ScriptAssemblies/<ASMDEF_NAME>.xml -nowarn:1570 -nowarn:1591 -nowarn:1584 -nowarn:1658 -nowarn:419 -nowarn:1574 -nowarn:1572 -nowarn:1573 -nowarn:1587
+-doc:./Library/XmlDocumentationGenerated/<ASMDEF_NAME>.xml
+-nowarn:419
+-nowarn:1570
+-nowarn:1572
+-nowarn:1573
+-nowarn:1574
+-nowarn:1584
+-nowarn:1587
+-nowarn:1591
+-nowarn:1658
 ```
 
+Because Unity will delete all files within `Library/ScriptAssemblies` on every domain reload,
+the XML documentation files cannot be permanently stored there.
+As a result, they must be generated into the `Library/XmlDocumentationGenerated`,
+then copied over to the `Library/ScriptAssemblies` on domain reload.
+
+> [!NOTE]
+> Original `csc.rsp` files within the `Library/PackageCache` directory will be renamed to `.csc-rsp-backup`
+> before new contents are appended to them.
+
+> [!NOTE]
+> Additional `.XMLDOC_CSC_RSP_GENERATED` files will be generated into the same folder to indicate that
+> the `csc.rsp` file has been modified by this tool, and to prevent subsequent executions from modifying it again.
+
 > [!IMPORTANT]
-> Must run this tool again when a package is updated or newly installed.
-> Because the `csc.rsp` files only exist in the local cache directory `Library/PackageCache`.
+> When a package is updated or newly installed,
+> we must run `Tools > XML Documentation > Generate` again.
+> Because the modified files within `Library/PackageCache` will be reverted to their original state,
+> while generated files will be deleted.
 
-## Example
+### Delete XML Documentation
 
-- Quick info popup in VSCode before using this tool:
+Use the menu `Tools > XML Documentation > Delete`.
+
+![generate xml documentation menu](imgs/tools-delete.png)
+
+This will delete all generated files within the `Library/PackageCache` directory
+and revert the original `csc.rsp` files if any were modified by this tool.
+
+Additionally, it will also delete the `Library/XmlDocumentationGenerated` directory.
+
+## Results
+
+- Before having XML documentation:
 
 ![before xml doc generation](imgs/vscode-0-before.png)
 
-- After using this tool:
+- After:
 
 ![after xml doc generation](imgs/vscode-1-after.png)
 
