@@ -38,8 +38,52 @@ namespace XmlDocGenerator
         private const string GENERATED_FILE = ".XMLDOC_CSC_RSP_GENERATED";
         private const string XML_DOCUMENTATION_FOLDER = "Library/XmlDocumentationGenerated";
         private const string SCRIPT_ASSEMBLIES_FOLDER = "Library/ScriptAssemblies";
+        private const string MENU_AUTO_GENERATE = "Tools/XML Documentation/Auto Generate";
+        private const string MENU_AUTO_LOG = "Tools/XML Documentation/Auto Log";
+        private const string AUTO_GENERATE_KEY = "XML_DOCUMENTATION_AUTO_GENERATE";
+        private const string AUTO_LOG_KEY = "XML_DOCUMENTATION_AUTO_LOG";
 
-        [MenuItem("Tools/XML Documentation/Generate", priority = 0)]
+        [MenuItem(MENU_AUTO_GENERATE, priority = 0)]
+        private static void ToggleAutoGenerate()
+        {
+            if (TryGetConfigAutoGenerate(out var value) == false)
+            {
+                value = false;
+            }
+            else
+            {
+                value = !value;
+            }
+
+            EditorUserSettings.SetConfigValue(AUTO_GENERATE_KEY, value.ToString());
+            Menu.SetChecked(MENU_AUTO_GENERATE, value);
+            Debug.Log($"{AUTO_GENERATE_KEY} = {value}");
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        [MenuItem(MENU_AUTO_LOG, priority = 1)]
+        private static void ToggleAutoLog()
+        {
+            if (TryGetConfigAutoLog(out var value) == false)
+            {
+                value = false;
+            }
+            else
+            {
+                value = !value;
+            }
+
+            EditorUserSettings.SetConfigValue(AUTO_LOG_KEY, value.ToString());
+            Menu.SetChecked(MENU_AUTO_LOG, value);
+            Debug.Log($"{AUTO_LOG_KEY} = {value}");
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        [MenuItem("Tools/XML Documentation/Generate", priority = 2)]
         private static void GenerateXmlDocumentation()
         {
             const string TITLE = "Generate XML Documentation";
@@ -111,7 +155,7 @@ namespace XmlDocGenerator
             AssetDatabase.Refresh();
         }
 
-        [MenuItem("Tools/XML Documentation/Delete", priority = 1)]
+        [MenuItem("Tools/XML Documentation/Delete", priority = 3)]
         private static void DeleteXmlDocumentation()
         {
             const string TITLE = "Delete XML Documentation";
@@ -234,6 +278,38 @@ namespace XmlDocGenerator
         }
 
         [InitializeOnLoadMethod]
+        private static void SetMenuCheckState()
+        {
+            if (TryGetConfigAutoGenerate(out var value) == false)
+            {
+                value = false;
+            }
+
+            Menu.SetChecked(MENU_AUTO_GENERATE, value);
+        }
+
+        [InitializeOnLoadMethod]
+        private static void AutoGenerateXmlDocumentation()
+        {
+            if (TryGetConfigAutoGenerate(out var autoGenerate) == false || autoGenerate == false)
+            {
+                return;
+            }
+
+            if (TryGetConfigAutoLog(out var autoLog) && autoLog)
+            {
+                var projectRoot = GetProjectRootPath();
+                var xmlDocumentationFolderPath = projectRoot.GetFolderAbsolutePath(XML_DOCUMENTATION_FOLDER);
+                Debug.Log(
+                    $"XML documentation for UPM packages has been generated into " +
+                    $"<a href=\"file:///{xmlDocumentationFolderPath}\">{XML_DOCUMENTATION_FOLDER}</a>"
+                );
+            }
+
+            GenerateXmlDocumentation();
+        }
+
+        [InitializeOnLoadMethod]
         private static void CopyXmlDocToScriptAssembliesFolder()
         {
             var projectRoot = GetProjectRootPath();
@@ -271,6 +347,18 @@ namespace XmlDocGenerator
 
         private static RootPath GetProjectRootPath()
             => Application.dataPath.Replace("/Assets", string.Empty);
+
+        private static bool TryGetConfigAutoGenerate(out bool value)
+        {
+            var configValue = EditorUserSettings.GetConfigValue(AUTO_GENERATE_KEY) ?? bool.FalseString;
+            return bool.TryParse(configValue, out value);
+        }
+
+        private static bool TryGetConfigAutoLog(out bool value)
+        {
+            var configValue = EditorUserSettings.GetConfigValue(AUTO_LOG_KEY) ?? bool.FalseString;
+            return bool.TryParse(configValue, out value);
+        }
 
         private static string GetCscRspContent(ref Printer p, string xmlFilePath)
         {
