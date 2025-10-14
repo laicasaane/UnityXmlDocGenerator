@@ -47,6 +47,10 @@ The contents of this file should look like this:
 -doc:Library/ScriptAssemblies/<ASMDEF_NAME>.xml -nowarn:1570 -nowarn:1591 -nowarn:1584 -nowarn:1658 -nowarn:419 -nowarn:1574 -nowarn:1572 -nowarn:1573 -nowarn:1587
 ```
 
+> [!IMPORTANT]
+> Must run this tool again when a package is updated or newly installed.
+> Because the `csc.rsp` files only exist in the local cache directory `Library/PackageCache`.
+
 ## Credits
 
 - Emad on GameDev StackExchange[^2]
