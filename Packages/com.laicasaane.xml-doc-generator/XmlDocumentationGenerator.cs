@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace XmlDocGenerator
 {
-    internal static class AssemblyDocGenerator
+    internal static class XmlDocumentationGenerator
     {
         private readonly struct AsmdefXmlDoc
         {
