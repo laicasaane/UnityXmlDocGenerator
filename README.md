@@ -74,11 +74,17 @@ then copied over to the `Library/ScriptAssemblies` on domain reload.
 > Additional `.XMLDOC_CSC_RSP_GENERATED` files will be generated into the same folder to indicate that
 > the `csc.rsp` file has been modified by this tool, and to prevent subsequent executions from modifying it again.
 
-> [!IMPORTANT]
-> When a package is updated or newly installed,
-> we must run `Tools > XML Documentation > Generate` again.
-> Because the modified files within `Library/PackageCache` will be reverted to their original state,
-> while generated files will be deleted.
+### Auto Generate on Domain Reload
+
+By default, when a package is installed or updated, we must run `Tools > XML Documentation > Generate` again. Because the modified files within `Library/PackageCache` will be reverted to their original state, while local added files will be deleted.
+
+To automate this process, just use the menu `Tools > XML Documentation > Auto Generate`.
+
+![auto generate xml documentation menu](imgs/tools-auto-generate.png)
+
+> [!NOTE]
+> Additionally, there is the option `Tools > XML Documentation > Auto Log` to notify
+> when the XML documentation files are generated on domain reload.
 
 ### Delete XML Documentation
 
