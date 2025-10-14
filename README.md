@@ -95,7 +95,7 @@ Use the menu `Tools > XML Documentation > Delete`.
 This will delete all generated files within the `Library/PackageCache` directory
 and revert the original `csc.rsp` files if any were modified by this tool.
 
-Additionally, it will also delete the `Library/XmlDocumentationGenerated` directory.
+Finally, it will also delete the `Library/XmlDocumentationGenerated` directory.
 
 ## Results
 
