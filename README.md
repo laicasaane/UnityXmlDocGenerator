@@ -76,15 +76,15 @@ then copied over to the `Library/ScriptAssemblies` on domain reload.
 
 ### Auto Generate on Domain Reload
 
-By default, when a package is installed or updated, we must run `Tools > XML Documentation > Generate` again. Because the modified files within `Library/PackageCache` will be reverted to their original state, while local added files will be deleted.
+By default, when a UPM package is installed, updated or uninstalled, we must invoke `Tools > XML Documentation > Generate` again. Because modified files within `Library/PackageCache` will be reverted to their original state, while local added files will be deleted.
 
-To automate this process, just use the menu `Tools > XML Documentation > Auto Generate`.
+Automatic generation can be achieved by enabling the menu option `Tools > XML Documentation > Auto Generate`.
 
 ![auto generate xml documentation menu](imgs/tools-auto-generate.png)
 
 > [!NOTE]
-> Additionally, there is the option `Tools > XML Documentation > Auto Log` to notify
-> when the XML documentation files are generated on domain reload.
+> Additionally, there is the menu option `Tools > XML Documentation > Auto Log` to notify
+> when the XML documentation files are automatically generated on domain reload.
 
 ### Delete XML Documentation
 
