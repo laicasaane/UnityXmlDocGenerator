@@ -19,7 +19,7 @@ This tool was created to offer a simple workaround for the time being, until the
 
 3. Enter the package URL
     ```
-    https://github.com/laicasaane/UnityXmlDocGenerator.git?path=/Packages/com.laicasaane.xml-doc-generator#1.0.0
+    https://github.com/laicasaane/UnityXmlDocGenerator.git?path=/Packages/com.laicasaane.xml-doc-generator#1.0.1
     ```
 
     ![enter git url then press add button](imgs/add-package-by-git-url-2.png)
