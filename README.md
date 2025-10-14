@@ -51,6 +51,16 @@ The contents of this file should look like this:
 > Must run this tool again when a package is updated or newly installed.
 > Because the `csc.rsp` files only exist in the local cache directory `Library/PackageCache`.
 
+## Example
+
+- Quick info popup in VSCode before using this tool:
+
+![before xml doc generation](imgs/vscode-0-before.png)
+
+- After using this tool:
+
+![after xml doc generation](imgs/vscode-1-after.png)
+
 ## Credits
 
 - Emad on GameDev StackExchange[^2]
