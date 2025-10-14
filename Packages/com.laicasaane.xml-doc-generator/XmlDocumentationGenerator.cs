@@ -280,12 +280,19 @@ namespace XmlDocGenerator
         [InitializeOnLoadMethod]
         private static void SetMenuCheckState()
         {
-            if (TryGetConfigAutoGenerate(out var value) == false)
+            if (TryGetConfigAutoGenerate(out var autoGenerate) == false)
             {
-                value = false;
+                autoGenerate = false;
             }
 
-            Menu.SetChecked(MENU_AUTO_GENERATE, value);
+            Menu.SetChecked(MENU_AUTO_GENERATE, autoGenerate);
+
+            if (TryGetConfigAutoLog(out var autoLog) == false)
+            {
+                autoLog = false;
+            }
+
+            Menu.SetChecked(MENU_AUTO_LOG, autoLog);
         }
 
         [InitializeOnLoadMethod]
