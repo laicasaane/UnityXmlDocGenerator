@@ -21,7 +21,7 @@ until the 1st party officially rectifies this situation.
 
 3. Enter the package URL
     ```
-    https://github.com/laicasaane/UnityXmlDocGenerator.git?path=/Packages/com.laicasaane.xml-doc-generator#1.0.2
+    https://github.com/laicasaane/UnityXmlDocGenerator.git?path=/Packages/com.laicasaane.xml-doc-generator#1.0.5
     ```
 
     ![enter git url then press add button](imgs/add-package-by-git-url-2.png)
@@ -76,7 +76,10 @@ then copied over to the `Library/ScriptAssemblies` on domain reload.
 
 ### Auto Generate on Domain Reload
 
-By default, when a UPM package is installed, updated or uninstalled, we must invoke `Tools > XML Documentation > Generate` again. Because modified files within `Library/PackageCache` will be reverted to their original state, while local added files will be deleted.
+By default, when a UPM package is installed, updated or uninstalled, we must invoke
+`Tools > XML Documentation > Generate` again.
+Because modified files within `Library/PackageCache` will be reverted to their original
+state, while local added files will be deleted.
 
 Automatic generation can be achieved by enabling the menu option `Tools > XML Documentation > Auto Generate`.
 
@@ -85,6 +88,10 @@ Automatic generation can be achieved by enabling the menu option `Tools > XML Do
 > [!NOTE]
 > Additionally, there is the menu option `Tools > XML Documentation > Auto Log` to notify
 > when the XML documentation files are automatically generated on domain reload.
+
+> [!NOTE]
+> Any XML file locates at `Library/XmlDocumentationGenerated` will be copied to
+> `Library/ScriptAssemblies` even if `Auto Generate` is disabled.
 
 ### Delete XML Documentation
 
