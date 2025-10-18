@@ -153,6 +153,14 @@ namespace XmlDocGenerator
             EditorUtility.ClearProgressBar();
 
             AssetDatabase.Refresh();
+
+            if (TryGetConfigAutoLog(out var autoLog) && autoLog)
+            {
+                Debug.Log(
+                    $"XML documentation for UPM packages has been generated into " +
+                    $"<a href=\"file:///{xmlDocumentationFolderPath}\">{XML_DOCUMENTATION_FOLDER}</a>"
+                );
+            }
         }
 
         [MenuItem("Tools/XML Documentation/Delete", priority = 3)]
@@ -278,6 +286,13 @@ namespace XmlDocGenerator
         }
 
         [InitializeOnLoadMethod]
+        private static void InitializeOnLoad()
+        {
+            SetMenuCheckState();
+            AutoGenerateXmlDocumentation();
+            CopyXmlDocToScriptAssembliesFolder();
+        }
+
         private static void SetMenuCheckState()
         {
             if (TryGetConfigAutoGenerate(out var autoGenerate) == false)
@@ -295,7 +310,6 @@ namespace XmlDocGenerator
             Menu.SetChecked(MENU_AUTO_LOG, autoLog);
         }
 
-        [InitializeOnLoadMethod]
         private static void AutoGenerateXmlDocumentation()
         {
             if (TryGetConfigAutoGenerate(out var autoGenerate) == false || autoGenerate == false)
@@ -316,7 +330,6 @@ namespace XmlDocGenerator
             GenerateXmlDocumentation();
         }
 
-        [InitializeOnLoadMethod]
         private static void CopyXmlDocToScriptAssembliesFolder()
         {
             var projectRoot = GetProjectRootPath();
@@ -349,6 +362,14 @@ namespace XmlDocGenerator
                 {
                     Debug.LogError($"Failed to copy '{xmlFile}' to '{destFilePath}': {ex.Message}");
                 }
+            }
+
+            if (TryGetConfigAutoLog(out var autoLog) && autoLog)
+            {
+                Debug.Log(
+                    $"XML documentation files has been copied to " +
+                    $"<a href=\"file:///{scriptAssembliesFolderPath}\">{SCRIPT_ASSEMBLIES_FOLDER}</a>"
+                );
             }
         }
 
