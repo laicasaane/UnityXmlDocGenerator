@@ -6,6 +6,16 @@ thus there was no API documentation to display in quick info popup within IDEs (
 This tool was created to offer a simple workaround for the time being,
 until the 1st party officially rectifies this situation.
 
+## Expected results
+
+- Before having XML documentation:
+
+![before xml doc generation](imgs/vscode-0-before.png)
+
+- After:
+
+![after xml doc generation](imgs/vscode-1-after.png)
+
 ## Installation
 
 ### Requirements
@@ -111,16 +121,6 @@ Use the menu `Tools > XML Documentation > Delete All`.
 ![generate xml documentation menu](imgs/tools-delete-all.png)
 
 It works the same as `Delete` but also deletes the `Library/XmlDocumentationGenerated` directory.
-
-## Results
-
-- Before having XML documentation:
-
-![before xml doc generation](imgs/vscode-0-before.png)
-
-- After:
-
-![after xml doc generation](imgs/vscode-1-after.png)
 
 ## Credits
 
