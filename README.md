@@ -93,7 +93,7 @@ Automatic generation can be achieved by enabling the menu option `Tools > XML Do
 > Any XML file locates at `Library/XmlDocumentationGenerated` will be copied to
 > `Library/ScriptAssemblies` even if `Auto Generate` is disabled.
 
-### Delete XML Documentation
+### Delete `csc.rsp` files
 
 Use the menu `Tools > XML Documentation > Delete`.
 
@@ -102,7 +102,15 @@ Use the menu `Tools > XML Documentation > Delete`.
 This will delete all generated files within the `Library/PackageCache` directory
 and revert the original `csc.rsp` files if any were modified by this tool.
 
-Finally, it will also delete the `Library/XmlDocumentationGenerated` directory.
+However, the `Library/XmlDocumentationGenerated` directory will be kept intact.
+
+### Delete everything
+
+Use the menu `Tools > XML Documentation > Delete All`.
+
+![generate xml documentation menu](imgs/tools-delete-all.png)
+
+It works the same as `Delete` but also deletes the `Library/XmlDocumentationGenerated` directory.
 
 ## Results
 

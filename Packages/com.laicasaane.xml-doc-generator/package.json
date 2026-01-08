@@ -1,7 +1,7 @@
 {
   "name": "com.laicasaane.xml-doc-generator",
   "displayName": "XML Documentation Generator",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "unity": "2022.3",
   "documentationUrl": "https://github.com/laicasaane/UnityXmlDocGenerator/blob/main/README.md",
   "type": "library"
