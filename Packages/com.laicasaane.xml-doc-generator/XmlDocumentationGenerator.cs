@@ -10,6 +10,7 @@ using UnityEngine;
 
 namespace XmlDocGenerator
 {
+    [InitializeOnLoad]
     internal static class XmlDocumentationGenerator
     {
         private readonly struct AsmdefXmlDoc
@@ -40,8 +41,17 @@ namespace XmlDocGenerator
         private const string SCRIPT_ASSEMBLIES_FOLDER = "Library/ScriptAssemblies";
         private const string MENU_AUTO_GENERATE = "Tools/XML Documentation/Auto Generate";
         private const string MENU_AUTO_LOG = "Tools/XML Documentation/Auto Log";
+        private const string MENU_GENERATE = "Tools/XML Documentation/Generate";
+        private const string MENU_DELETE = "Tools/XML Documentation/Delete";
+        private const string MENU_DELETE_ALL = "Tools/XML Documentation/Delete All";
         private const string AUTO_GENERATE_KEY = "XML_DOCUMENTATION_AUTO_GENERATE";
         private const string AUTO_LOG_KEY = "XML_DOCUMENTATION_AUTO_LOG";
+
+        static XmlDocumentationGenerator()
+        {
+            EditorApplication.update -= Update;
+            EditorApplication.update += Update;
+        }
 
         [MenuItem(MENU_AUTO_GENERATE, priority = 0)]
         private static void ToggleAutoGenerate()
@@ -83,7 +93,7 @@ namespace XmlDocGenerator
             AssetDatabase.Refresh();
         }
 
-        [MenuItem("Tools/XML Documentation/Generate", priority = 2)]
+        [MenuItem(MENU_GENERATE, priority = 2)]
         private static void GenerateXmlDocumentation()
         {
             const string TITLE = "Generate XML Documentation";
@@ -163,48 +173,29 @@ namespace XmlDocGenerator
             }
         }
 
-        [MenuItem("Tools/XML Documentation/Delete", priority = 3)]
-        private static void DeleteXmlDocumentation()
+        [MenuItem(MENU_DELETE, priority = 3)]
+        private static void Delete()
         {
-            const string TITLE = "Delete XML Documentation";
+            const string TITLE = "Delete";
             const string INFO = "Deleting...";
 
             EditorUtility.DisplayProgressBar(TITLE, INFO, 0f);
 
-            var packages = GetPackageDefs(true);
+            DeleteCscRspFiles();
 
-            if (packages.Length < 1)
-            {
-                EditorUtility.ClearProgressBar();
-                return;
-            }
+            EditorUtility.ClearProgressBar();
+            AssetDatabase.Refresh();
+        }
 
-            foreach (var package in packages)
-            {
-                foreach (var asmdef in package.Asmdefs)
-                {
-                    var cscFilePath = asmdef.Root.GetFileAbsolutePath("csc.rsp");
-                    var cscBackupFilePath = asmdef.Root.GetFileAbsolutePath(".csc-rsp-backup");
-                    var cscMetaFilePath = asmdef.Root.GetFileAbsolutePath("csc.rsp.meta");
-                    var generatedFilePath = asmdef.Root.GetFileAbsolutePath(GENERATED_FILE);
+        [MenuItem(MENU_DELETE_ALL, priority = 4)]
+        private static void DeleteAll()
+        {
+            const string TITLE = "Delete All";
+            const string INFO = "Deleting...";
 
-                    if (File.Exists(cscBackupFilePath))
-                    {
-                        File.Copy(cscBackupFilePath, cscFilePath, true);
-                        File.Delete(cscBackupFilePath);
-                    }
-                    else if (File.Exists(cscFilePath))
-                    {
-                        File.Delete(cscFilePath);
-                        File.Delete(cscMetaFilePath);
-                    }
+            EditorUtility.DisplayProgressBar(TITLE, INFO, 0f);
 
-                    if (File.Exists(generatedFilePath))
-                    {
-                        File.Delete(generatedFilePath);
-                    }
-                }
-            }
+            DeleteCscRspFiles();
 
             var projectRoot = GetProjectRootPath();
             var xmlDocumentationFolderPath = projectRoot.GetFolderAbsolutePath(XML_DOCUMENTATION_FOLDER);
@@ -218,6 +209,71 @@ namespace XmlDocGenerator
             EditorUtility.ClearProgressBar();
 
             AssetDatabase.Refresh();
+        }
+
+        [MenuItem(MENU_GENERATE, true)]
+        private static bool ValidateGeneratee()
+        {
+            return ValidateAutoGenerate() == false;
+        }
+
+        [MenuItem(MENU_DELETE, true)]
+        private static bool ValidateDelete()
+        {
+            return ValidateAutoGenerate() == false;
+        }
+
+        [MenuItem(MENU_DELETE_ALL, true)]
+        private static bool ValidateDeleteAll()
+        {
+            return ValidateAutoGenerate() == false;
+        }
+
+        private static bool ValidateAutoGenerate()
+        {
+            return TryGetConfigAutoGenerate(out var value) && value;
+        }
+
+        private static void DeleteCscRspFiles()
+        {
+            var packages = GetPackageDefs(true);
+
+            if (packages.Length < 1)
+            {
+                return;
+            }
+
+            foreach (var package in packages)
+            {
+                foreach (var asmdef in package.Asmdefs)
+                {
+                    var generatedFilePath = asmdef.Root.GetFileAbsolutePath(GENERATED_FILE);
+
+                    if (File.Exists(generatedFilePath) == false)
+                    {
+                        continue;
+                    }
+
+                    File.Delete(generatedFilePath);
+
+                    var cscFilePath = asmdef.Root.GetFileAbsolutePath("csc.rsp");
+                    var cscBackupFilePath = asmdef.Root.GetFileAbsolutePath(".csc-rsp-backup");
+                    var cscMetaFilePath = asmdef.Root.GetFileAbsolutePath("csc.rsp.meta");
+
+                    if (File.Exists(cscBackupFilePath))
+                    {
+                        File.Copy(cscBackupFilePath, cscFilePath, true);
+                        File.Delete(cscBackupFilePath);
+                    }
+                    else if (File.Exists(cscFilePath))
+                    {
+                        File.Delete(cscFilePath);
+                        File.Delete(cscMetaFilePath);
+                    }
+                }
+            }
+
+            return;
         }
 
         private static PackageDef[] GetPackageDefs(bool onlyGenerated)
@@ -291,6 +347,13 @@ namespace XmlDocGenerator
             SetMenuCheckState();
             AutoGenerateXmlDocumentation();
             CopyXmlDocToScriptAssembliesFolder();
+        }
+
+        private static void Update()
+        {
+            EditorApplication.update -= Update;
+
+            SetMenuCheckState();
         }
 
         private static void SetMenuCheckState()
