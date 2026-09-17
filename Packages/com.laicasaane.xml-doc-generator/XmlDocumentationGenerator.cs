@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEditor;
+using UnityEditor.Compilation;
 using UnityEditor.PackageManager;
 using UnityEditorInternal;
 using UnityEngine;
@@ -23,6 +24,12 @@ namespace XmlDocGenerator
                 Name = name;
                 Root = root;
             }
+        }
+
+        [Serializable]
+        private class AsmdefJson
+        {
+            public string name;
         }
 
         private class PackageDef
@@ -162,7 +169,7 @@ namespace XmlDocGenerator
             EditorUtility.DisplayProgressBar(TITLE, INFO, 100f);
             EditorUtility.ClearProgressBar();
 
-            AssetDatabase.Refresh();
+            CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
 
             if (TryGetConfigAutoLog(out var autoLog) && autoLog)
             {
@@ -329,7 +336,7 @@ namespace XmlDocGenerator
                         || (onlyGenerated == false && generatedFileExists == false)
                     )
                     {
-                        packageDef.Asmdefs.Add(new AsmdefXmlDoc(asmdefAsset.name, asmdefRoot));
+                        packageDef.Asmdefs.Add(new AsmdefXmlDoc(GetAssemblyName(asmdefAsset), asmdefRoot));
                     }
                 }
                 catch (Exception ex)
@@ -434,6 +441,15 @@ namespace XmlDocGenerator
                     $"<a href=\"file:///{scriptAssembliesFolderPath}\">{SCRIPT_ASSEMBLIES_FOLDER}</a>"
                 );
             }
+        }
+
+        private static string GetAssemblyName(AssemblyDefinitionAsset asmdefAsset)
+        {
+            // asmdefAsset.name is the asset file name, not the assembly name declared
+            // in the asmdef's `name` field. The two can differ, e.g.
+            // InternalBridgeDef.asmdef -> Unity.InternalAPIEngineBridge.001.
+            // The XML has to be named after the assembly so it pairs with its dll.
+            return JsonUtility.FromJson<AsmdefJson>(asmdefAsset.text).name;
         }
 
         private static RootPath GetProjectRootPath()
