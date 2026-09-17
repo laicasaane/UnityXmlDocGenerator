@@ -31,7 +31,7 @@ until the 1st party officially rectifies this situation.
 
 3. Enter the package URL
     ```
-    https://github.com/laicasaane/UnityXmlDocGenerator.git?path=/Packages/com.laicasaane.xml-doc-generator#1.0.5
+    https://github.com/laicasaane/UnityXmlDocGenerator.git?path=/Packages/com.laicasaane.xml-doc-generator#1.0.7
     ```
 
     ![enter git url then press add button](imgs/add-package-by-git-url-2.png)
